@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.deb
+*.AppImage
+*.snap
+.DS_Store

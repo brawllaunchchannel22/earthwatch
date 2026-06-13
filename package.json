@@ -1,0 +1,45 @@
+{
+  "name": "earthwatch",
+  "version": "1.0.0",
+  "description": "Interaktive Weltkarte für NASA EONET Naturereignisse",
+  "main": "main.js",
+  "author": "Dein Name <deine.email@example.com>",
+  "homepage": "https://github.com/deinname/earthwatch",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --enable-logging",
+    "build": "electron-builder",
+    "build:linux": "electron-builder --linux",
+    "build:deb": "electron-builder --linux deb",
+    "build:appimage": "electron-builder --linux AppImage"
+  },
+  "keywords": ["map", "nasa", "eonet", "events", "electron", "earth"],
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.0"
+  },
+  "build": {
+    "appId": "com.earthwatch.app",
+    "productName": "EarthWatch",
+    "copyright": "Copyright © 2026",
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": ["deb", "AppImage"],
+      "category": "Science",
+      "maintainer": "Dein Name <deine.email@example.com>",
+      "synopsis": "NASA EONET Naturereignisse auf der Weltkarte",
+      "description": "EarthWatch zeigt Naturereignisse wie Waldbrände, Stürme und Vulkane in Echtzeit auf einer interaktiven Weltkarte.",
+      "icon": "assets/icon.png"
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0", "libnotify4", "libnss3",
+        "libxtst6", "xdg-utils", "libatspi2.0-0", "libuuid1"
+      ]
+    },
+    "files": ["**/*", "!node_modules/**/*"]
+  }
+}

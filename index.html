@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EarthWatch — NASA EONET Naturereignisse live</title>
+  <meta name="description" content="EarthWatch zeigt NASA EONET Naturereignisse wie Waldbrände, Stürme und Vulkane in Echtzeit auf einer interaktiven Weltkarte und einem 3D-Globus."/>
+  <meta name="theme-color" content="#080c12"/>
+  <meta property="og:title" content="EarthWatch"/>
+  <meta property="og:description" content="Interaktive Weltkarte für NASA EONET Naturereignisse – live & kostenlos."/>
+  <meta property="og:type" content="website"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <!-- Globe.gl pinned to a stable build -->
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.26.5/dist/globe.gl.min.js"></script>
+</head>
+<body>
+
+<!-- ══ TITLEBAR ════════════════════════════════════════ -->
+<div class="titlebar">
+  <div class="titlebar-left">
+    <button class="icon-btn" id="sidebar-toggle" title="Sidebar (S)">
+      <svg width="15" height="13" viewBox="0 0 15 13" fill="none">
+        <rect y="0" width="15" height="1.8" rx="0.9" fill="currentColor"/>
+        <rect y="5.1" width="15" height="1.8" rx="0.9" fill="currentColor"/>
+        <rect y="10.2" width="15" height="1.8" rx="0.9" fill="currentColor"/>
+      </svg>
+    </button>
+    <div class="logo-mark">
+      <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+        <circle cx="11" cy="11" r="9" stroke="var(--accent)" stroke-width="1.5"/>
+        <circle cx="11" cy="11" r="4" fill="var(--accent)" opacity="0.25"/>
+        <circle cx="11" cy="11" r="1.5" fill="var(--accent)"/>
+        <line x1="11" y1="2" x2="11" y2="5" stroke="var(--accent)" stroke-width="1.5"/>
+        <line x1="11" y1="17" x2="11" y2="20" stroke="var(--accent)" stroke-width="1.5"/>
+        <line x1="2" y1="11" x2="5" y2="11" stroke="var(--accent)" stroke-width="1.5"/>
+        <line x1="17" y1="11" x2="20" y2="11" stroke="var(--accent)" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <span class="app-title">EARTH<strong>WATCH</strong></span>
+    <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+  </div>
+
+  <div class="titlebar-drag"></div>
+
+  <!-- Theme switcher -->
+  <div class="theme-bar">
+    <button class="theme-btn active" data-theme="dark"     title="Dark (1)">🌑</button>
+    <button class="theme-btn"        data-theme="light"    title="Light (2)">☀️</button>
+    <button class="theme-btn"        data-theme="midnight" title="Midnight (3)">🌌</button>
+    <button class="theme-btn"        data-theme="hacker"   title="Hacker (4)">💻</button>
+  </div>
+
+  <div class="globe-toggle-wrap" title="Globus-Ansicht (G)">
+    <button class="globe-toggle-btn" id="globe-toggle">
+      <span class="globe-icon">🌍</span>
+      <span class="globe-label">GLOBUS</span>
+    </button>
+  </div>
+
+  <!-- Web: GitHub link instead of Electron window controls -->
+  <div class="titlebar-controls web-controls">
+    <a class="tb-btn github-btn" href="https://github.com/brawllaunchchannel22" target="_blank" title="GitHub @brawllaunchchannel22" id="github-link">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+          0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+          -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
+          .07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
+          -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27
+          .68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12
+          .51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
+          0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+    </a>
+    <button class="tb-btn" onclick="window.electronAPI?.minimize()">−</button>
+    <button class="tb-btn" onclick="window.electronAPI?.maximize()">▢</button>
+    <button class="tb-btn close" onclick="window.electronAPI?.close()">✕</button>
+  </div>
+</div>
+
+<!-- ══ SIDEBAR ═════════════════════════════════════════ -->
+<div class="sidebar">
+
+  <!-- Stats -->
+  <div class="sidebar-header">
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-num" id="total-count">—</div>
+        <div class="stat-label">Events gesamt</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="open-count">—</div>
+        <div class="stat-label">Aktiv</div>
+      </div>
+    </div>
+    <div class="last-updated" id="last-updated"></div>
+  </div>
+
+  <!-- Search -->
+  <div class="filter-section">
+    <div class="section-title">SUCHE</div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input id="search-input" class="search-input" type="text" placeholder="Ereignis filtern…"/>
+    </div>
+  </div>
+
+  <!-- Status filter -->
+  <div class="filter-section">
+    <div class="section-title">STATUS</div>
+    <div class="status-bar">
+      <button class="status-btn active" data-status="all">Alle</button>
+      <button class="status-btn" data-status="open">Aktiv</button>
+      <button class="status-btn" data-status="closed">Archiv</button>
+    </div>
+  </div>
+
+  <!-- Categories -->
+  <div class="filter-section">
+    <div class="section-title">KATEGORIEN</div>
+    <div class="category-filters" id="category-filters"></div>
+  </div>
+
+  <!-- Timespan -->
+  <div class="filter-section">
+    <div class="section-title">ZEITRAUM</div>
+    <div class="days-selector">
+      <button class="day-btn active" data-days="7">7T</button>
+      <button class="day-btn" data-days="30">30T</button>
+      <button class="day-btn" data-days="90">90T</button>
+      <button class="day-btn" data-days="365">1J</button>
+    </div>
+  </div>
+
+  <!-- Sort + list header -->
+  <div class="filter-section list-header-section">
+    <div class="section-title">EREIGNISSE</div>
+    <select class="sort-select" id="sort-select" title="Sortierung">
+      <option value="date-desc">Datum ↓</option>
+      <option value="date-asc">Datum ↑</option>
+      <option value="category">Kategorie</option>
+    </select>
+  </div>
+
+  <!-- Event list -->
+  <div class="event-list" id="event-list">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <span>Lade NASA EONET…</span>
+    </div>
+  </div>
+
+  <!-- Shortcuts hint -->
+  <div class="shortcuts-hint">
+    <span>Esc · R · 1–4</span>
+  </div>
+</div>
+
+<!-- ══ GLOBE ════════════════════════════════════════════ -->
+<div id="globe-container" class="globe-hidden">
+  <div class="globe-overlay-hint">
+    Ziehen → Rotieren · Scroll oder <kbd>+</kbd><kbd>−</kbd> → Zoom · Klick auf Punkt für Details
+  </div>
+  <div class="globe-zoom-btns">
+    <button class="globe-zoom-btn" id="globe-zoom-in"  title="Hereinzoomen (+)">+</button>
+    <button class="globe-zoom-btn" id="globe-zoom-out" title="Herauszoomen (−)">−</button>
+  </div>
+</div>
+
+<!-- ══ MAP ═════════════════════════════════════════════ -->
+<div id="map"></div>
+
+<!-- Map style bar -->
+<div class="map-style-bar">
+  <button class="map-style-btn active" data-style="dark">Dark</button>
+  <button class="map-style-btn" data-style="light">Hell</button>
+  <button class="map-style-btn" data-style="normal">Normal</button>
+  <button class="map-style-btn" data-style="satellite">Satellit</button>
+  <button class="map-style-btn" data-style="terrain">Terrain</button>
+</div>
+
+<!-- ══ DETAIL PANEL ════════════════════════════════════ -->
+<div class="detail-panel" id="detail-panel">
+  <button class="detail-close" id="detail-close">✕</button>
+  <div class="detail-category" id="detail-category"></div>
+  <div class="detail-title"    id="detail-title"></div>
+  <div class="detail-date"     id="detail-date"></div>
+  <div class="detail-coords"   id="detail-coords"></div>
+  <div class="detail-status"   id="detail-status"></div>
+  <div class="detail-scale"    id="detail-scale"></div>
+  <div class="detail-sources"  id="detail-sources"></div>
+  <div class="detail-actions">
+    <button class="action-btn"  id="detail-flyto">🎯 Hinzoomen</button>
+    <button class="action-btn"  id="detail-copy-coords">📋 Koordinaten</button>
+    <a class="action-btn link-btn" id="detail-link" target="_blank">↗ NASA EONET</a>
+  </div>
+</div>
+
+<!-- ══ TOAST ═══════════════════════════════════════════ -->
+<div class="toast" id="toast"></div>
+
+<script src="renderer.js"></script>
+</body>
+</html>
